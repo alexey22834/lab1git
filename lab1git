@@ -1,0 +1,377 @@
+
+# ========================================
+# 1. ПОДГОТОВКА РЕПОЗИТОРИЯ
+# ========================================
+
+# Создание директории проекта
+mkdir git-lab-work
+cd git-lab-work
+
+# Инициализация репозитория
+git init
+
+# Настройка пользователя (если не настроено глобально)
+git config user.name "Your Name"
+git config user.email "your.email@example.com"
+
+# Создание README.md
+echo "# Git Lab Work" > README.md
+echo "Лабораторная работа по Git" >> README.md
+echo "" >> README.md
+echo "## Описание" >> README.md
+echo "Демонстрация работы с Git: ветки, слияния, откаты, хуки" >> README.md
+
+# Создание .gitignore
+echo "# Временные файлы" > .gitignore
+echo "*.tmp" >> .gitignore
+echo "*.log" >> .gitignore
+echo "*.swp" >> .gitignore
+echo ".DS_Store" >> .gitignore
+echo "node_modules/" >> .gitignore
+echo "__pycache__/" >> .gitignore
+echo "*.pyc" >> .gitignore
+
+# Первый коммит
+git add .
+git commit -m "init lab work"
+
+# Создание репозитория на GitHub (выполнить вручную через веб-интерфейс)
+# Затем подключить удалённый репозиторий
+git remote add origin https://github.com/YOUR_USERNAME/git-lab-work.git
+
+# Переименование ветки в main (если нужно)
+git branch -M main
+
+# Отправка изменений
+git push -u origin main
+
+# ========================================
+# 2. GIT FLOW - СОЗДАНИЕ ВЕТОК
+# ========================================
+
+# Создание ветки develop
+git branch develop
+git checkout develop
+
+# Создание файла проекта в develop
+echo "# Main Project File" > main.py
+echo "def main():" >> main.py
+echo "    print('Hello, Git!')" >> main.py
+git add main.py
+git commit -m "feat: add main project file"
+
+# Отправка develop в удалённый репозиторий
+git push -u origin develop
+
+# ========================================
+# 3. FEATURE ВЕТКИ
+# ========================================
+
+# Feature 1: Добавление функции валидации
+git checkout -b feature/validation develop
+
+echo "" >> main.py
+echo "def validate_input(data):" >> main.py
+echo "    if not data:" >> main.py
+echo "        return False" >> main.py
+echo "    return True" >> main.py
+
+git add main.py
+git commit -m "feat: add input validation function"
+
+# Ещё один коммит в feature/validation
+echo "    # Validation complete" >> main.py
+git add main.py
+git commit -m "docs: add validation comment"
+
+# Feature 2: Добавление логирования
+git checkout develop
+git checkout -b feature/logging develop
+
+echo "" >> main.py
+echo "def log_message(msg):" >> main.py
+echo "    print(f'[LOG] {msg}')" >> main.py
+
+git add main.py
+git commit -m "feat: add logging function"
+
+# Feature 3: Добавление конфигурации
+git checkout develop
+git checkout -b feature/config develop
+
+echo "# Configuration" > config.py
+echo "DEBUG = True" >> config.py
+echo "VERSION = '1.0'" >> config.py
+
+git add config.py
+
+git commit -m "feat: add configuration file"
+
+# ========================================
+# 4. MERGE С --no-ff
+# ========================================
+
+# Слияние feature/logging в develop
+git checkout develop
+git merge --no-ff feature/logging -m "merge: integrate logging feature"
+
+# Слияние feature/config в develop
+git merge --no-ff feature/config -m "merge: integrate configuration"
+
+# ========================================
+# 5. REBASE
+# ========================================
+
+# Перебазирование feature/validation на develop
+git checkout feature/validation
+git rebase develop
+
+# Слияние после rebase
+git checkout develop
+git merge feature/validation
+
+# ========================================
+# 6. CHERRY-PICK
+# ========================================
+
+# Создание новой feature ветки
+git checkout -b feature/utils develop
+
+echo "# Utilities" > utils.py
+echo "def helper_function():" >> utils.py
+echo "    return 'Helper'" >> utils.py
+
+git add utils.py
+git commit -m "feat: add helper function"
+
+# Добавляем ещё один коммит
+echo "" >> utils.py
+echo "def another_helper():" >> utils.py
+echo "    return 'Another Helper'" >> utils.py
+
+git add utils.py
+git commit -m "feat: add another helper function"
+
+# Запоминаем хеш последнего коммита
+git log --oneline -n 1
+# Предположим хеш: abc1234
+
+# Переходим в другую ветку и делаем cherry-pick
+git checkout -b feature/emergency-fix develop
+git cherry-pick abc1234
+
+# Возвращаемся в develop и мерджим utils
+git checkout develop
+git merge --no-ff feature/utils -m "merge: add utilities"
+
+# ========================================
+# 7. ДЕМОНСТРАЦИЯ ОТКАТОВ
+# ========================================
+
+# Создаём тестовые коммиты для демонстрации откатов
+echo "# Test file for revert" > test_revert.txt
+git add test_revert.txt
+git commit -m "test: add file for revert demo"
+
+# GIT REVERT - откат коммита с созданием нового коммита
+git revert HEAD --no-edit
+
+# Создаём файл для демонстрации reset
+echo "# Test file for reset" > test_reset.txt
+git add test_reset.txt
+git commit -m "test: add file for reset demo"
+
+echo "Modified content" >> test_reset.txt
+git add test_reset.txt
+git commit -m "test: modify file for reset demo"
+
+# GIT RESET --soft (откат коммита, изменения остаются в staged)
+git reset --soft HEAD~1
+
+# Делаем коммит снова
+git commit -m "test: recommit after soft reset"
+
+# GIT RESET --hard (полный откат)
+echo "Unwanted change" >> test_reset.txt
+git add test_reset.txt
+git commit -m "test: unwanted commit"
+
+git reset --hard HEAD~1
+
+# GIT RESTORE - восстановление файла
+echo "Modified" >> main.py
+git restore main.py
+
+# Или восстановление из staged
+echo "Modified again" >> main.py
+git add main.py
+git restore --staged main.py
+
+# ========================================
+# 8. GIT HOOKS
+# ========================================
+
+# Pre-commit hook - проверка на TODO
+cat > .git/hooks/pre-commit << 'EOF'
+#!/bin/bash
+if git diff --cached | grep -i "TODO"; then
+    echo "Error: Commit contains TODO comments"
+    exit 1
+fi
+exit 0
+EOF
+
+chmod +x .git/hooks/pre-commit
+
+# Commit-msg hook - проверка пустых сообщений
+cat > .git/hooks/commit-msg << 'EOF'
+#!/bin/bash
+if [ -z  "$(cat $1 | grep -v '^#')" ]; then
+    echo "Error: Empty commit message"
+    exit 1
+fi
+exit 0
+EOF
+
+chmod +x .git/hooks/commit-msg
+
+# Pre-push hook - проверка/тесты
+cat > .git/hooks/pre-push << 'EOF'
+#!/bin/bash
+echo "Running pre-push checks..."
+# Пример: проверка Python синтаксиса
+if [ -f "main.py" ]; then
+    python -m py_compile main.py
+    if [ $? -ne 0 ]; then
+        echo "Error: Python syntax check failed"
+        exit 1
+    fi
+fi
+echo "Pre-push checks passed"
+exit 0
+EOF
+
+chmod +x .git/hooks/pre-push
+
+# Тестирование хуков
+echo "# Normal change" >> config.py
+git add config.py
+git commit -m "test: testing hooks"
+
+# ========================================
+# 9. СОЗДАНИЕ И РАЗРЕШЕНИЕ КОНФЛИКТА
+# ========================================
+
+# Создаём две ветки с конфликтующими изменениями
+git checkout -b feature/conflict1 develop
+
+echo "# Version from conflict1" > conflict_file.txt
+echo "Line 1 from branch 1" >> conflict_file.txt
+
+git add conflict_file.txt
+git commit -m "feat: add conflict file version 1"
+
+git checkout develop
+git checkout -b feature/conflict2 develop
+
+echo "# Version from conflict2" > conflict_file.txt
+echo "Line 1 from branch 2" >> conflict_file.txt
+
+git add conflict_file.txt
+git commit -m "feat: add conflict file version 2"
+
+# Мерджим первую ветку
+git checkout develop
+git merge --no-ff feature/conflict1 -m "merge: add conflict1 feature"
+
+# Пытаемся смерджить вторую - возникнет конфликт
+git merge --no-ff feature/conflict2
+
+# Смотрим статус конфликта
+git status
+
+# Разрешаем конфликт вручную
+cat > conflict_file.txt << 'EOF'
+# Version merged
+Line 1 from branch 1
+Line 1 from branch 2
+EOF
+
+# Завершаем merge
+git add conflict_file.txt
+git commit -m "merge: resolve conflict between conflict1 and conflict2"
+
+# ========================================
+# 10. РАБОТА С ТЕГАМИ
+# ========================================
+
+# Создание аннотированного тега v1.0
+git tag -a v1.0 -m "Release version 1.0"
+
+# Добавляем дополнительный функционал
+git checkout -b feature/extra develop
+
+echo "def extra_feature():" >> main.py
+echo "    return 'Extra functionality'" >> main.py
+
+git add main.py
+git commit -m "feat: add extra functionality"
+
+git checkout develop
+git merge --no-ff feature/extra -m "merge: add extra feature"
+
+# Создание тега v1.1-beta
+git tag -a v1.1-beta -m "Beta version 1.1 with extra features"
+
+# Просмотр всех тегов
+git tag
+
+# Просмотр информации о теге
+git show v1.0
+
+# ========================================
+# 11. ОТПРАВКА ВСЕХ ИЗМЕНЕНИЙ
+# ========================================
+
+# Отправка всех веток
+git push origin --all
+
+# Отправка тегов
+git push origin --tags
+
+# ========================================
+# 12. ПОЛЕЗНЫЕ КОМАНДЫ ДЛЯ ПРОВЕРКИ
+# ========================================
+
+# Просмотр графа коммитов
+git log --graph --oneline --all --decorate
+
+# Просмотр всех веток
+git branch -a
+
+# Просмотр истории
+git log --oneline
+
+# Просмотр тегов
+git tag -l
+
+# Просмотр удалённых репозиториев
+git remote -v
+
+# Проверка статуса
+git status
+
+# ========================================
+# ЗАВЕРШЕНИЕ
+# ========================================
+
+# Переход на main для финальной проверки
+git checkout main
+
+# Слияние develop в main для релиза
+git merge develop
+
+# Отправка main
+git push origin main
+
+echo "Лабораторная работа завершена!"
